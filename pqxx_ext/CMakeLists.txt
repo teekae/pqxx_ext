@@ -4,6 +4,7 @@ set(INCLUDE_DIR inc/pqxx_ext)
 
 add_library(pqxx_ext
     INTERFACE
+    ${INCLUDE_DIR}/SystemClock.h
     ${INCLUDE_DIR}/Vector.h
 
 )

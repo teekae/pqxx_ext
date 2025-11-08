@@ -2,7 +2,7 @@
 #pragma once
 
 #include <pqxx/pqxx>
-#include <string>
+#include <vector>
 
 namespace pqxx {
 template <typename T> struct string_traits<std::vector<T>> {
