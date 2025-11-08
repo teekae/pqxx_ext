@@ -22,7 +22,8 @@ void BaseFixture::SetUp() {
 }
 
 void BaseFixture::TearDown() {
-
-  // Don't commit to DB
-  tx->abort();
+  if (tx) {
+    // Don't commit to DB
+    tx->abort();
+  }
 }

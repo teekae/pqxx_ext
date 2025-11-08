@@ -38,12 +38,12 @@ jobs:
           mkdir -p build
           cd build
           cmake -G Ninja -DCMAKE_BUILD_TYPE=Debug ..
-          cmake --build . -- -j
+          cmake --build .
 
-      - name: Run tests (pqxx_ext_test)
+      - name: Run tests
         run: |
           cd build
-          ctest --output-on-failure -R pqxx_ext_test || (echo "ctest failed" && exit 1)
+          ctest --output-on-failure || (echo "ctest failed" && exit 1)
 
       - name: Publish Test Results
         uses: EnricoMi/publish-unit-test-result-action@v2
