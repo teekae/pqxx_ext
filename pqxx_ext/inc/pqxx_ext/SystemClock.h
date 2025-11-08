@@ -4,7 +4,6 @@
 #include <pqxx/pqxx>
 
 #include <chrono>
-#include <mach/host_special_ports.h>
 
 namespace internal {
 
