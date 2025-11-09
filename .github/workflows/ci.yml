@@ -46,12 +46,39 @@ jobs:
         run: |
           vcpkg install libpq
 
+      - name: Start Postgres (only on Ubuntu)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          docker run -d --name ci-postgres \
+            -e POSTGRES_USER=testuser \
+            -e POSTGRES_PASSWORD=testpass \
+            -e POSTGRES_DB=testdb \
+            -p 5432:5432 postgres:15
+          
+          echo "POSTGRES_CONN=user=testuser password=testpass host=localhost port=5432 dbname=testdb" >> $GITHUB_ENV
+          echo "PGHOST=localhost" >> $GITHUB_ENV
+          echo "PGPORT=5432" >> $GITHUB_ENV
+          echo "PGUSER=testuser" >> $GITHUB_ENV
+          echo "PGPASSWORD=testpass" >> $GITHUB_ENV
+          echo "PGDATABASE=testdb" >> $GITHUB_ENV
+
+
       - name: Configure and build
         run: |
           mkdir -p build
           cd build
           cmake -G Ninja -DCMAKE_BUILD_TYPE=Debug ..
           cmake --build .
+
+      - name: Check Postgres connection
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          for i in {1..30}; do
+          if pg_isready -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" -d "$PGDATABASE"; then
+            echo "Postgres ready"; break
+          fi
+          sleep 1
+          done
 
       - name: Run tests
         run: |
