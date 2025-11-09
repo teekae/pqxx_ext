@@ -48,8 +48,16 @@ template <> struct string_traits<std::chrono::system_clock::time_point> {
 
     const auto sizeDiff = end - begin;
 
-    const auto result =
-        std::format_to_n(begin, sizeDiff, "{0:%F} {0:%T%z}", value);
+    // Some platforms have higher precision than microseconds
+    // so we need to convert to microseconds to get the expected format
+    using sys_time = std::chrono::time_point<std::chrono::system_clock,
+                                             std::chrono::microseconds>;
+
+    const sys_time timePointInMicroseconds =
+        std::chrono::time_point_cast<std::chrono::microseconds>(value);
+
+    const auto result = std::format_to_n(begin, sizeDiff, "{:%F %T%z}",
+                                         timePointInMicroseconds);
 
     begin = result.out;
 
