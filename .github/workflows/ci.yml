@@ -6,11 +6,6 @@ on:
   pull_request:
     branches: [ main ]
   workflow_dispatch:
-    
-concurrency:
-  group: ci-${{ github.ref }}
-  cancel-in-progress: true
-
 
 jobs:
   build-and-test:
@@ -44,6 +39,17 @@ jobs:
           gcc --version
           g++ --version
           cmake --version
+
+      - name: Install system packages (macOS)
+        if: matrix.os == 'macos-latest'
+        run: |
+          brew update
+          brew install postgresql
+
+      - name: Install system packages (Windows)
+        if: matrix.os == 'windows-latest'
+        run: |
+          vcpkg install libpq
 
       - name: Configure and build
         run: |
