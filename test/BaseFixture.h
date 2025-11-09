@@ -5,5 +5,9 @@
 
 class BaseFixture : public testing::Test {
 protected:
-  pqxx::connection CreateConnection();
+  void SetUp() override;
+  void TearDown() override;
+
+  std::unique_ptr<pqxx::connection> conn;
+  std::unique_ptr<pqxx::work> tx;
 };

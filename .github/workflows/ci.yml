@@ -1,0 +1,113 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build-and-test:
+    strategy:
+      matrix:
+        os: [ ubuntu-latest, macos-latest ]
+    runs-on: ${{ matrix.os }}
+    permissions:
+      checks: write
+      pull-requests: write
+
+    env:
+      GTEST_OUTPUT: xml:test-results/
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Install system packages (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql postgresql-contrib libpq-dev
+          gcc --version
+          g++ --version
+          cmake --version
+
+      - name: Install system packages (macOS)
+        if: matrix.os == 'macos-latest'
+        run: |
+          brew update
+          brew install postgresql
+
+      - name: Install system packages (Windows)
+        if: matrix.os == 'windows-latest'
+        run: |
+          vcpkg install libpq
+
+      - name: Start Postgres (only on Ubuntu)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          docker run -d --name ci-postgres \
+            -e POSTGRES_USER=testuser \
+            -e POSTGRES_PASSWORD=testpass \
+            -e POSTGRES_DB=testdb \
+            -p 5432:5432 postgres:15
+          
+          echo "POSTGRES_CONN=user=testuser password=testpass host=localhost port=5432 dbname=testdb" >> $GITHUB_ENV
+          echo "PGHOST=localhost" >> $GITHUB_ENV
+          echo "PGPORT=5432" >> $GITHUB_ENV
+          echo "PGUSER=testuser" >> $GITHUB_ENV
+          echo "PGPASSWORD=testpass" >> $GITHUB_ENV
+          echo "PGDATABASE=testdb" >> $GITHUB_ENV
+
+
+      - name: Configure and build
+        run: |
+          mkdir -p build
+          cd build
+          cmake -G Ninja -DCMAKE_BUILD_TYPE=Debug ..
+          cmake --build .
+
+      - name: Check Postgres connection
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          for i in {1..30}; do
+          if pg_isready -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" -d "$PGDATABASE"; then
+            echo "Postgres ready"; break
+          fi
+          sleep 1
+          done
+
+      - name: Run tests
+        run: |
+          cd build
+          ctest --output-on-failure || (echo "ctest failed" && exit 1)
+
+      - name: Upload Test Results
+        if: (!cancelled())
+        uses: actions/upload-artifact@v4
+        with:
+          name: Test Results ( ${{ matrix.os }})
+          path: build/test-results/
+
+  publish-test-results:
+    name: "Publish Tests Results"
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    permissions:
+      checks: write
+      pull-requests: write
+
+    if: (!cancelled())
+    steps:
+      - name: Download Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Publish Test Results
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        with:
+          files: "artifacts/**/*.xml"

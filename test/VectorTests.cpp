@@ -5,9 +5,7 @@
 #include <gtest/gtest.h>
 #include <pqxx/pqxx>
 
-class VectorTests : public BaseFixture {};
-
-TEST_F(VectorTests, SizesCorrectly) {
+TEST(VectorTests, SizesCorrectly) {
 
   std::vector values = {1, 2, 3};
 
@@ -29,7 +27,7 @@ TEST_F(VectorTests, SizesCorrectly) {
   EXPECT_EQ(sizeBuffer, expectedSizeBuffer);
 }
 
-TEST_F(VectorTests, ConvertsFromString) {
+TEST(VectorTests, ConvertsFromString) {
 
   std::vector expectedValues = {1, 4, 9};
 
@@ -39,7 +37,7 @@ TEST_F(VectorTests, ConvertsFromString) {
   EXPECT_EQ(result, expectedValues);
 }
 
-TEST_F(VectorTests, ConvertsToString) {
+TEST(VectorTests, ConvertsToString) {
   std::vector values = {1, 2, 3};
 
   const std::string expectedValue = "{1,2,3}";
@@ -61,57 +59,43 @@ TEST_F(VectorTests, ConvertsToString) {
   EXPECT_EQ(result, expectedValue);
 }
 
-TEST_F(VectorTests, IntRoundTripsCorrectly) {
+class VectorDBTests : public BaseFixture {};
 
-  auto conn = CreateConnection();
-
-  pqxx::work tx(conn);
-
+TEST_F(VectorDBTests, IntRoundTripsCorrectly) {
   const std::vector expectedVector = {1, 2, 4, 6};
 
-  tx.exec("CREATE TABLE vector ("
-          "id SERIAL PRIMARY KEY,"
-          "values integer[]);");
+  tx->exec("CREATE TABLE vector ("
+           "id SERIAL PRIMARY KEY,"
+           "values integer[]);");
 
-  tx.exec("INSERT INTO vector (values) VALUES ($1);",
-          pqxx::params{expectedVector});
+  tx->exec("INSERT INTO vector (values) VALUES ($1);",
+           pqxx::params{expectedVector});
 
-  const auto row = tx.exec("SELECT values FROM vector;").one_row();
+  const auto row = tx->exec("SELECT values FROM vector;").one_row();
 
   std::tuple<std::vector<int>> result;
 
   row.to(result);
 
   EXPECT_EQ(std::get<0>(result), expectedVector);
-
-  // Don't keep the result
-  tx.abort();
 }
 
-TEST_F(VectorTests, StringRoundTripsCorrectly) {
-
-  auto conn = CreateConnection();
-
-  pqxx::work tx(conn);
-
+TEST_F(VectorDBTests, StringRoundTripsCorrectly) {
   const std::vector<std::string> expectedVector = {"Hello", "PQXX", "Vector",
                                                    "Test"};
 
-  tx.exec("CREATE TABLE vector ("
-          "id SERIAL PRIMARY KEY,"
-          "values text[]);");
+  tx->exec("CREATE TABLE vector ("
+           "id SERIAL PRIMARY KEY,"
+           "values text[]);");
 
-  tx.exec("INSERT INTO vector (values) VALUES ($1);",
-          pqxx::params{expectedVector});
+  tx->exec("INSERT INTO vector (values) VALUES ($1);",
+           pqxx::params{expectedVector});
 
-  const auto row = tx.exec("SELECT values FROM vector;").one_row();
+  const auto row = tx->exec("SELECT values FROM vector;").one_row();
 
   std::tuple<std::vector<std::string>> result;
 
   row.to(result);
 
   EXPECT_EQ(std::get<0>(result), expectedVector);
-
-  // Don't keep the result
-  tx.abort();
 }
