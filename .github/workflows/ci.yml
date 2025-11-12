@@ -111,5 +111,21 @@ jobs:
         uses: test-summary/action@v2
         with:
           paths: "artifacts/**/*.xml"
+          output: "summary.md"
           show: "all"
         if: always()
+
+      - name: Find Comment
+        uses: peter-evans/find-comment@v3
+        id: fc
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          comment-author: 'github-actions[bot]'
+
+      - name: Create or update comment
+        uses: peter-evans/create-or-update-comment@v5
+        with:
+          comment-id: ${{ steps.fc.outputs.comment-id }}
+          issue-number: ${{ github.event.pull_request.number }}
+          body-path: summary.md
+          edit-mode: replace
