@@ -110,6 +110,6 @@ jobs:
       - name: Test Summary
         uses: test-summary/action@v2
         with:
-          paths: "test/results/**/test-*.xml"
+          paths: "artifacts/**/*.xml"
           show: "all"
         if: always()
