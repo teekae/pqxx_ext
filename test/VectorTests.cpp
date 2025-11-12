@@ -99,3 +99,9 @@ TEST_F(VectorDBTests, StringRoundTripsCorrectly) {
 
   EXPECT_EQ(std::get<0>(result), expectedVector);
 }
+
+TEST(VectorTests, FailToSee) { EXPECT_EQ("Hello", "World"); }
+
+TEST(VectorTests, SkipTest) {
+  GTEST_SKIP() << "Skipping this test for demonstration purposes.";
+}

@@ -40,3 +40,9 @@ TEST(SystemClockTests, ConvertsToString) {
 
   EXPECT_EQ(result, expectedValue);
 }
+
+TEST(SystemClockTests, FailTest) {
+  EXPECT_TRUE(false);
+
+  EXPECT_FALSE(true);
+}
