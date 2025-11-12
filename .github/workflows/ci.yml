@@ -112,7 +112,7 @@ jobs:
         with:
           paths: "artifacts/**/*.xml"
           output: "summary.md"
-          show: "skipped, failed"
+          show: "fail, skip"
         if: always()
 
       - name: Find Comment
